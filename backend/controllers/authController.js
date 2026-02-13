@@ -8,8 +8,10 @@ import VerificationCode from '../models/VerificationCode.js';
 import { sendVerificationEmail } from '../utils/emailService.js';
 
 // Generate JWT Token
+// Generate JWT Token
 export const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
+  const jwtSecret = process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET;
+  return jwt.sign({ userId }, jwtSecret, {
     expiresIn: '30d', // Token expires in 30 days
   });
 };
@@ -36,7 +38,7 @@ export const signupUser = async (req, res) => {
     }
 
     // Check if email already exists (only for non-deleted users)
-    const existingUser = await User.findOne({ 
+    const existingUser = await User.findOne({
       email: email.toLowerCase(),
       $or: [
         { isDeleted: false },
@@ -55,7 +57,7 @@ export const signupUser = async (req, res) => {
     if (existingCode) {
       const timeDiff = Date.now() - existingCode.createdAt.getTime();
       const minWaitTime = 2 * 60 * 1000; // 2 minutes in milliseconds
-      
+
       if (timeDiff < minWaitTime) {
         const remainingSeconds = Math.ceil((minWaitTime - timeDiff) / 1000);
         return res.status(429).json({
@@ -92,7 +94,7 @@ export const signupUser = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Signup error:', error.message);
-    
+
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to send verification code. Please try again.',
@@ -115,14 +117,14 @@ export const loginUser = async (req, res) => {
 
     // Find user by email (include password for comparison) - exclude deleted users
     // Use $or to match both false and undefined (for existing users before soft delete was added)
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: email.toLowerCase(),
       $or: [
         { isDeleted: false },
         { isDeleted: { $exists: false } }
       ]
     }).select('+password');
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -173,7 +175,7 @@ export const loginUser = async (req, res) => {
 export const deleteAccount = async (req, res) => {
   try {
     const userId = req.user.userId;
-    
+
     // Find user
     const user = await User.findById(userId);
     if (!user) {
@@ -200,30 +202,30 @@ export const deleteAccount = async (req, res) => {
     // Cascade soft delete: Products
     await Product.updateMany(
       { sellerId: userId, isDeleted: false },
-      { 
-        isDeleted: true, 
+      {
+        isDeleted: true,
         deletedAt: new Date(),
-        deletedBy: userId 
+        deletedBy: userId
       }
     );
 
     // Cascade soft delete: Feed Posts
     await FeedPost.updateMany(
       { userId: userId, isDeleted: false },
-      { 
-        isDeleted: true, 
+      {
+        isDeleted: true,
         deletedAt: new Date(),
-        deletedBy: userId 
+        deletedBy: userId
       }
     );
 
     // Cascade soft delete: Feed Comments
     await FeedComment.updateMany(
       { userId: userId, isDeleted: false },
-      { 
-        isDeleted: true, 
+      {
+        isDeleted: true,
         deletedAt: new Date(),
-        deletedBy: userId 
+        deletedBy: userId
       }
     );
 
@@ -253,7 +255,7 @@ export const getCurrentUser = async (req, res) => {
         { isDeleted: { $exists: false } }
       ]
     });
-    
+
     if (!user || user.isDeleted === true) {
       return res.status(404).json({
         success: false,
@@ -288,7 +290,7 @@ export const getCurrentUser = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    
+
     // Log request details for debugging
     console.log('📝 Profile update request:', {
       userId,

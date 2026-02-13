@@ -153,7 +153,7 @@ app.use('/uploads', express.static(uploadsDir, {
 }));
 
 // MongoDB connection with connection pooling
-const mongoURI = process.env.MONGO_URI;
+const mongoURI = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 const mongooseOptions = {
   maxPoolSize: 10, // Maximum number of connections in the pool
