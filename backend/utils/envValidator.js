@@ -6,32 +6,26 @@ const envSchema = Joi.object({
   // MongoDB
   MONGO_URI: Joi.string().allow('').optional(),
   MONGODB_URI: Joi.string().allow('').optional(),
-  'any.required': 'MONGO_URI is required',
-  'string.empty': 'MONGO_URI cannot be empty',
-}),
 
   // JWT
   JWT_SECRET: Joi.string().allow('').optional(),
-    JWT_ACCESS_SECRET: Joi.string().allow('').optional(),
-      'any.required': 'JWT_SECRET is required',
-        'string.empty': 'JWT_SECRET cannot be empty',
-  }),
+  JWT_ACCESS_SECRET: Joi.string().allow('').optional(),
 
-// Server
-PORT: Joi.number().default(3001),
+  // Server
+  PORT: Joi.number().default(3001),
   HOST: Joi.string().default('0.0.0.0'),
-    NODE_ENV: Joi.string()
-      .valid('development', 'production', 'test')
-      .default('development'),
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test')
+    .default('development'),
 
-      // Email (optional - only needed for email features)
-      COMPANY_EMAIL: Joi.string().allow('').optional(),
-        COMPANY_EMAIL_PASSWORD: Joi.string().allow('').optional(),
+  // Email (optional - only needed for email features)
+  COMPANY_EMAIL: Joi.string().allow('').optional(),
+  COMPANY_EMAIL_PASSWORD: Joi.string().allow('').optional(),
 
-          // Logging
-          LOG_LEVEL: Joi.string()
-            .valid('error', 'warn', 'info', 'http', 'debug')
-            .default('info'),
+  // Logging
+  LOG_LEVEL: Joi.string()
+    .valid('error', 'warn', 'info', 'http', 'debug')
+    .default('info'),
 }).unknown(); // Allow other env vars
 
 /**
