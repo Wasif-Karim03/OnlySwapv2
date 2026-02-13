@@ -1,0 +1,73 @@
+import Joi from 'joi';
+import logger from './logger.js';
+
+// Define the schema for environment variables
+const envSchema = Joi.object({
+  // MongoDB
+  MONGO_URI: Joi.string().required().messages({
+    'any.required': 'MONGO_URI is required',
+    'string.empty': 'MONGO_URI cannot be empty',
+  }),
+
+  // JWT - Just check it exists; length validation happens after NODE_ENV is validated
+  JWT_SECRET: Joi.string().required().messages({
+    'any.required': 'JWT_SECRET is required',
+    'string.empty': 'JWT_SECRET cannot be empty',
+  }),
+
+  // Server
+  PORT: Joi.number().default(3001),
+  HOST: Joi.string().default('0.0.0.0'),
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test')
+    .default('development'),
+
+  // Email (optional - only needed for email features)
+  COMPANY_EMAIL: Joi.string().allow('').optional(),
+  COMPANY_EMAIL_PASSWORD: Joi.string().allow('').optional(),
+
+  // Logging
+  LOG_LEVEL: Joi.string()
+    .valid('error', 'warn', 'info', 'http', 'debug')
+    .default('info'),
+}).unknown(); // Allow other env vars
+
+/**
+ * Validate environment variables
+ * @returns {Object} Validated environment variables
+ */
+export const validateEnv = () => {
+  const { error, value } = envSchema.validate(process.env, {
+    abortEarly: false, // Show all errors, not just the first one
+  });
+
+  if (error) {
+    const errorMessages = error.details.map((detail) => detail.message).join('\n');
+    logger.error('❌ Environment validation failed:');
+    logger.error(errorMessages);
+    logger.error('\nPlease check your .env file and ensure all required variables are set.');
+    process.exit(1);
+  }
+
+  // Additional production checks
+  if (value.NODE_ENV === 'production') {
+    if (value.JWT_SECRET === 'supersecretkey' || value.JWT_SECRET.length < 32) {
+      logger.error('❌ JWT_SECRET must be changed from default and be at least 32 characters in production!');
+      logger.error('Generate a secure secret with: openssl rand -base64 32');
+      process.exit(1);
+    }
+
+    if (value.MONGO_URI.includes('localhost')) {
+      logger.warn('⚠️  Using localhost MongoDB in production is not recommended');
+    }
+  } else {
+    // Development mode - warn if JWT_SECRET is too short but don't fail
+    if (value.JWT_SECRET && value.JWT_SECRET.length < 32) {
+      logger.warn('⚠️  JWT_SECRET is less than 32 characters. This is acceptable for development, but production requires at least 32 characters.');
+    }
+  }
+
+  logger.info('✅ Environment variables validated successfully');
+  return value;
+};
+

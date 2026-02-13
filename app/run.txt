@@ -1,0 +1,5 @@
+# Terminal 1:
+cd ~/Desktop/OnlySwap && ./start-backend.sh
+
+# Terminal 2:
+cd ~/Desktop/OnlySwap && ./start-expo.sh
